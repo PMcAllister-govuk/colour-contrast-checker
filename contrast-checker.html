@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Colour Picker</title>
+
+  <script>
+    // Uses code from https://gist.github.com/wgminer/abe717c4b90e38d1e6f4
+    // for colour contrast checking
+
+    function getColor(idx) {
+      const colorContainer = document.getElementById('color-container-'+idx);
+      const colorDiv = document.getElementById('color-'+idx);
+      const colorHexCode = document.getElementById('color-hex-code-'+idx);
+
+      if(window.EyeDropper) {
+        const eyeDropper = new window.EyeDropper();
+
+        eyeDropper
+          .open()
+          .then((result) => {
+            const color = result.sRGBHex;
+            //console.log('Hex: ' + color);
+            colorHexCode.textContent = color;
+            colorDiv.style.backgroundColor = color;
+
+            let colorHex1 = document.getElementById('color-hex-code-1').textContent;
+            let colorHex2 = document.getElementById('color-hex-code-2').textContent;
+            contrast(colorHex1,colorHex2);
+          })
+          .catch( e => {
+              console.error(e);
+        });
+      } else {
+          console.warn('Error: This browser does not support the eye dropper');
+      }
+    }
+
+    var contrast = function (foreground, background) {
+
+      const ratioText = document.getElementById('ratio');
+
+      var hexToRgb = function (hex) {
+
+          // Expand shorthand form (e.g. '03F') to full form (e.g. '0033FF')
+          var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+
+          hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+              return r + r + g + g + b + b;
+          });
+
+          var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+
+          // Returns {r: '', g: '', b: ''}
+          return result ? {
+              r: parseInt(result[1], 16),
+              g: parseInt(result[2], 16),
+              b: parseInt(result[3], 16)
+          } : null;
+      }
+
+      var luminance = function (rgbColor) {
+          var a = [rgbColor.r, rgbColor.g, rgbColor.b].map(function(v) {
+              v /= 255;
+              return (v <= 0.03928) ?
+                  v / 12.92 :
+                  Math.pow( ((v+0.055)/1.055), 2.4 );
+              });
+          return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+      }
+
+      var rgb1 = hexToRgb(foreground);
+      var rgb2 = hexToRgb(background);
+
+      var lum1 = luminance(rgb1);
+      var lum2 = luminance(rgb2);
+
+      var ratio = (Math.max(lum1, lum2) + 0.05)/(Math.min(lum1, lum2) + 0.05);
+
+      usableRatio = (Math.round(ratio*100)/100);
+      displayRatio = usableRatio + ':1';
+
+      // Update display
+      ratioText.textContent = displayRatio;
+
+      // Update WCAG compliance checks
+      updateWCAG(usableRatio);
+
+      return displayRatio;
+    }
+
+    function updateWCAG(ratio) {
+      const aaRegular = document.getElementById('aa-regular');
+      const aaLarge = document.getElementById('aa-large');
+      const aaGfx = document.getElementById('aa-graphics');
+      const aaaRegular = document.getElementById('aaa-regular');
+      const aaaLarge = document.getElementById('aaa-large');
+      const aaaGfx = document.getElementById('aaa-graphics');
+
+      const passText = '✅ Pass';
+      const failText = '❌ Fail';
+
+      if (ratio >= 7.1) {
+        aaRegular.textContent = passText;
+        aaLarge.textContent = passText;
+        aaGfx.textContent = passText;
+        aaaRegular.textContent = passText;
+        aaaLarge.textContent = passText;
+        aaaGfx.textContent = passText;
+      }
+      else if (ratio >= 4.5 && ratio < 7.1) {
+        aaRegular.textContent = passText;
+        aaLarge.textContent = passText;
+        aaGfx.textContent = passText;
+        aaaRegular.textContent = failText;
+        aaaLarge.textContent = passText;
+        aaaGfx.textContent = passText;
+      }
+      else if (ratio >= 3 && ratio < 4.5) {
+        aaRegular.textContent = failText;
+        aaLarge.textContent = passText;
+        aaGfx.textContent = passText;
+        aaaRegular.textContent = failText;
+        aaaLarge.textContent = failText;
+        aaaGfx.textContent = failText;
+      }
+      else {
+        aaRegular.textContent = failText;
+        aaLarge.textContent = failText;
+        aaGfx.textContent = failText;
+        aaaRegular.textContent = failText;
+        aaaLarge.textContent = failText;
+        aaaGfx.textContent = failText;
+      }
+    }
+
+  </script>
+  <style>
+    body {
+      font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+      font-size: 16px;
+      color: #555;
+    }
+    h1 {
+      font-size: 2em;
+      padding-bottom: 1em;
+    }
+    .container {
+      margin-top: 15px;
+      padding: 5px;
+      border: 1px solid #eee;
+      width: 128px;
+    }
+    .color {
+      border-radius: 5px;
+      width: 128px;
+      height: 64px;
+      border: 1px solid #eee;
+      background-color: #fff;
+    }
+    .hex {
+      font-weight: bold;
+      font-size: 1.5em;
+    }
+
+    .button-blue {
+      display: inline-block;
+      outline: 0;
+      border: 0;
+      cursor: pointer;
+      background-color: #4299e1;
+      border-radius: 4px;
+      padding: 8px 16px;
+      font-size: 16px;
+      font-weight: 700;
+      color: white;
+      line-height: 26px;
+    }
+
+    .row {
+      display: flex;
+    }
+
+    .row:after {
+      content: "";
+      display: table;
+      clear: both;
+    }
+
+    .column {
+      flex: 50%;
+      max-width: 240px;
+    }
+
+    .bigtext {
+      font-size: 1.3em;
+    }
+
+    .bigtext--bold {
+      font-size: 1.3em;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="row">
+    <div class="heading">
+      <h1>WCAG 2.2 colour contrast checker</h1>
+      <h2>Choose colours to compare</h2>
+    </div>
+  </div>
+  <div class="row">
+    <div class="column" id="col1">
+      <button id="open-eyedropper-1" class="button-blue" onclick="getColor(1)">Choose colour 1</button>
+
+      <div id="color-container-1" class="container">
+        <div id="color-1" class="color"></div>
+        <p id="color-hex-code-1" class="hex">#ffffff</p>
+      </div>
+    </div>
+    <div class="column" id="col2">
+      <button id="open-eyedropper-2" class="button-blue" onclick="getColor(2)">Choose colour 2</button>
+
+      <div id="color-container-2" class="container">
+        <div id="color-2" class="color"></div>
+        <p id="color-hex-code-2" class="hex">#ffffff</p>
+      </div>
+    </div>
+
+    <div class="column">
+      <p class="bigtext--bold">Contrast ratio</p>
+      <p class="bigtext" id="ratio">0:0</p>
+    </div>
+  </div>  
+
+  <div class="row">
+    <div class="results">
+      <h2>Contrast results, AA level</h2>
+      <p>Regular text: <span id="aa-regular"> </span></p>
+      <p>Large text: <span id="aa-large"> </span></p>
+      <p>Regular text: <span id="aa-graphics"> </span></p>
+      <h2>Contrast results, AAA level</h2>
+      <p>Regular text: <span id="aaa-regular"> </span></p>
+      <p>Large text: <span id="aaa-large"> </span></p>
+      <p>Regular text: <span id="aaa-graphics"> </span></p>
+    </div>
+  </div>
+</body>
+</html>
