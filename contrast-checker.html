@@ -1,7 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head prefix="DC: http://purl.org/dc/elements/1.1 DCTERMS: http://purl.org/dc/terms">
   <meta charset="UTF-8">
+  
+  <meta property="DCTERMS:created" content="2025-04-03T15:07:31Z">
+  <meta property="DCTERMS:creator" content="Philip McAllister https://github.com/PMcAllister-govuk">
+  <meta property="DCTERMS:contributor" content="Will Miner https://gist.github.com/wgminer">
+  <meta property="DCTERMS:description" content="A color contrast checking tool. Samples colors from your display using an eyedropper and reports W3C WCAG 2.2 compliance for the color combination.">
+  <meta property="DCTERMS:hasVersion" content="1.0.1">
+  <meta property="DCTERMS:language" content="en-GB">
+  <meta property="DCTERMS:license" content="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/">
+  <meta property="DCTERMS:modified" content="2025-04-03T15:07:31Z">
+  <meta property="DCTERMS:publisher" content="Ofqual">
+  <meta property="DCTERMS:publisher" content="UK Government">
+  <meta property="DCTERMS:references" content="https://www.w3.org/TR/WCAG22/#contrast-minimum">
+  <meta property="DCTERMS:references" content="https://www.w3.org/TR/WCAG20-TECHS/G18.html#G18-tests">
+  <meta property="DCTERMS:source" content="https://github.com/PMcAllister-govuk/colour-contrast-checker">
+  <meta property="DCTERMS:subject" content="Web content accessibility">
+  <meta property="DCTERMS:title" content="Colour contrast checker">
+
   <title>Colour contrast checker</title>
 
   <script>
@@ -24,6 +41,7 @@
             colorHexCode.textContent = color;
             colorDiv.style.backgroundColor = color;
 
+            // Recalculate the contrast straight after choosing a new color
             let colorHex1 = document.getElementById('color-hex-code-1').textContent;
             let colorHex2 = document.getElementById('color-hex-code-2').textContent;
             contrast(colorHex1,colorHex2);
@@ -60,12 +78,18 @@
       }
 
       var luminance = function (rgbColor) {
+
+        // W3C procedure for determining luminance is documented at
+        // https://www.w3.org/TR/WCAG20-TECHS/G18.html#G18-tests
+
           var a = [rgbColor.r, rgbColor.g, rgbColor.b].map(function(v) {
               v /= 255;
               return (v <= 0.03928) ?
                   v / 12.92 :
                   Math.pow( ((v+0.055)/1.055), 2.4 );
               });
+
+          // Weightings for color components from W3C https://www.w3.org/TR/WCAG20-TECHS/G18.html#G18-tests
           return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
       }
 
@@ -80,10 +104,10 @@
       usableRatio = (Math.round(ratio*100)/100);
       displayRatio = usableRatio + ':1';
 
-      // Update display
+      // Update display of ratio
       ratioText.textContent = displayRatio;
 
-      // Update WCAG compliance checks
+      // Update WCAG compliance check texts
       updateWCAG(usableRatio);
 
       return displayRatio;
@@ -200,50 +224,68 @@
       font-size: 1.3em;
       font-weight: bold;
     }
+
+    .screenreader--only {
+      border: 0; 
+      clip: rect(0 0 0 0); 
+      -webkit-clip-path: polygon(0px 0px, 0px 0px, 0px 0px); 
+      clip-path: polygon(0px 0px, 0px 0px, 0px 0px); 
+      height: 1px; 
+      margin: -1px; 
+      overflow: hidden; 
+      padding: 0; 
+      position: absolute; 
+      width: 1px; 
+      white-space: nowrap; 
+    }
   </style>
 </head>
 <body>
-  <div class="row">
-    <div class="heading">
-      <h1>WCAG 2.2 colour contrast checker</h1>
-      <h2>Choose colours to compare</h2>
-    </div>
-  </div>
-  <div class="row">
-    <div class="column" id="col1">
-      <button id="open-eyedropper-1" class="button-blue" onclick="getColor(1)">Choose colour 1</button>
-
-      <div id="color-container-1" class="container">
-        <div id="color-1" class="color"></div>
-        <p id="color-hex-code-1" class="hex">#ffffff</p>
+  <main>
+    <div class="row">
+      <div class="heading">
+        <h1>WCAG 2.2 colour contrast checker</h1>
+        <h2>Choose colours to compare</h2>
       </div>
     </div>
-    <div class="column" id="col2">
-      <button id="open-eyedropper-2" class="button-blue" onclick="getColor(2)">Choose colour 2</button>
+    <div class="row">
+      <div class="column" role="region" id="col1">
+        <h3 class="screenreader--only">Colour 1</h3>
+        <button id="open-eyedropper-1" class="button-blue" onclick="getColor(1)">Choose colour 1</button>
 
-      <div id="color-container-2" class="container">
-        <div id="color-2" class="color"></div>
-        <p id="color-hex-code-2" class="hex">#ffffff</p>
+        <div id="color-container-1" class="container" aria-live="polite">
+          <div aria-hidden="true" id="color-1" class="color"></div>
+          <p id="color-hex-code-1" class="hex">#ffffff</p>
+        </div>
+      </div>
+      <div class="column" role="region" id="col2">
+        <h3 class="screenreader--only">Colour 2</h3>
+        <button id="open-eyedropper-2" class="button-blue" onclick="getColor(2)">Choose colour 2</button>
+
+        <div id="color-container-2" class="container" aria-live="polite">
+          <div aria-hidden="true" id="color-2" class="color"></div>
+          <p id="color-hex-code-2" class="hex">#ffffff</p>
+        </div>
+      </div>
+
+      <div class="column" role="region" aria-live="polite">
+        <h2>Contrast ratio</h2>
+        <p class="bigtext" id="ratio">0:0</p>
+      </div>
+    </div>  
+
+    <div class="row">
+      <div role="region" class="results" aria-live="polite">
+        <h2>Contrast results, AA level</h2>
+        <p>Regular text: <span id="aa-regular">?</span></p>
+        <p>Large text: <span id="aa-large">?</span></p>
+        <p>Graphics: <span id="aa-graphics">?</span></p>
+        <h2>Contrast results, AAA level</h2>
+        <p>Regular text: <span id="aaa-regular">?</span></p>
+        <p>Large text: <span id="aaa-large">?</span></p>
+        <p>Graphics: <span id="aaa-graphics">?</span></p>
       </div>
     </div>
-
-    <div class="column">
-      <h2>Contrast ratio</h2>
-      <p class="bigtext" id="ratio">0:0</p>
-    </div>
-  </div>  
-
-  <div class="row">
-    <div class="results">
-      <h2>Contrast results, AA level</h2>
-      <p>Regular text: <span id="aa-regular"> </span></p>
-      <p>Large text: <span id="aa-large"> </span></p>
-      <p>Regular text: <span id="aa-graphics"> </span></p>
-      <h2>Contrast results, AAA level</h2>
-      <p>Regular text: <span id="aaa-regular"> </span></p>
-      <p>Large text: <span id="aaa-large"> </span></p>
-      <p>Regular text: <span id="aaa-graphics"> </span></p>
-    </div>
-  </div>
+  </main>
 </body>
 </html>
